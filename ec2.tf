@@ -105,9 +105,22 @@ resource "aws_instance" "hcc_service_ec2" {
   }
 }
 
+resource "aws_eip" "hcc_service_eip" {
+  instance = aws_instance.hcc_service_ec2.id
+  domain   = "vpc"
+
+  tags = {
+    Name = "hcc-service-eip"
+  }
+}
+
 # -------------------------
 # OUTPUT
 # -------------------------
 output "ec2_public_ip" {
   value = aws_instance.hcc_service_ec2.public_ip
+}
+
+output "elastic_ip" {
+  value = aws_eip.hcc_service_eip.public_ip
 }
