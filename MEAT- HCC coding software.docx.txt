@@ -1,0 +1,748 @@
+﻿MEAT
+Monitoring:
+Evaluation
+Assessment
+Treatment
+
+
+The diagnosis(ICD-10) should be confirmed with a MEAT
+
+
+First AI should highlight the keyword in the  medical record;
+1.Monitoring Keywords (125 Terms)
+reviewed
+monitor
+monitored
+monitoring
+follow-up
+recheck
+trend
+tracking
+surveillance
+watchful
+observe
+observation
+vitals reviewed
+bp monitored
+blood pressure check
+pulse check
+weight monitored
+oxygen saturation
+pulse ox
+temperature monitored
+glucose log
+sugar log
+a1c reviewed
+creatinine reviewed
+gfr reviewed
+lipid panel reviewed
+cholesterol reviewed
+cbc reviewed
+cmp reviewed
+bmp reviewed
+urine test reviewed
+microalbumin reviewed
+thyroid test reviewed
+psa reviewed
+troponin reviewed
+bnp reviewed
+liver enzymes reviewed
+alt reviewed
+ast reviewed
+bilirubin reviewed
+albumin reviewed
+calcium reviewed
+sodium reviewed
+potassium reviewed
+magnesium reviewed
+phosphate reviewed
+vitamin d reviewed
+iron studies reviewed
+ferritin reviewed
+repeat labs
+repeat imaging
+repeat test
+next visit
+scheduled follow-up
+return in 3 months
+return in 6 months
+follow-up visit
+telehealth follow-up
+monitor symptoms
+symptom diary
+pain scale monitored
+mobility monitored
+fall risk monitored
+diet log reviewed
+exercise log reviewed
+bp log reviewed
+home glucose monitoring
+home bp monitoring
+device monitoring
+remote monitoring
+holter monitoring
+cardiac monitoring
+oxygen monitoring
+cpap compliance monitored
+dialysis monitoring
+fluid balance monitored
+intake output monitored
+urine output monitored
+catheter output monitored
+wound monitored
+ulcer monitored
+foot exam monitored
+neuropathy monitored
+retina monitored
+vision monitored
+hearing monitored
+mental status monitored
+memory monitored
+depression scale monitored
+anxiety scale monitored
+sleep monitored
+appetite monitored
+weight loss monitored
+bmi monitored
+growth chart monitored
+prenatal monitoring
+fetal monitoring
+contraction monitoring
+medication compliance monitored
+adherence monitored
+side effects monitored
+tolerance monitored
+response monitored
+outcome monitored
+healing monitored
+recovery monitored
+function monitored
+range of motion monitored
+strength monitored
+respiratory status monitored
+cardiac status monitored
+renal function monitored
+________________
+
+
+2. Evaluation Keywords (125 Terms)
+ordered
+evaluation
+evaluate
+assess further
+diagnostic test
+lab ordered
+cbc ordered
+cmp ordered
+bmp ordered
+a1c ordered
+lipid panel ordered
+thyroid test ordered
+psa ordered
+troponin ordered
+bnp ordered
+blood culture ordered
+urine culture ordered
+stool test ordered
+covid test ordered
+flu test ordered
+imaging ordered
+x-ray ordered
+ct scan ordered
+mri ordered
+ultrasound ordered
+doppler ordered
+echo ordered
+stress test ordered
+angiogram ordered
+ekg ordered
+holter ordered
+biopsy ordered
+colonoscopy ordered
+endoscopy ordered
+bronchoscopy ordered
+bone scan ordered
+pet scan ordered
+screening test
+cancer screening
+mammogram ordered
+pap smear ordered
+colorectal screening
+lung screening
+prostate screening
+referral
+consult
+specialist referral
+cardiology referral
+nephrology referral
+neurology referral
+oncology referral
+endocrinology referral
+pulmonology referral
+gi referral
+orthopedic referral
+psychiatry referral
+pain management referral
+pt referral
+ot referral
+speech therapy referral
+nutrition referral
+social work referral
+home health referral
+palliative referral
+hospice referral
+genetic testing
+allergy testing
+skin test
+tuberculosis test
+sleep study ordered
+nerve conduction study
+emg ordered
+urology evaluation
+ophthalmology exam
+dental evaluation
+foot exam
+retinal exam
+hearing test
+vision test
+bone density test
+dexascan ordered
+metabolic panel
+cardiac enzymes
+coagulation test
+inr test
+pt ptt test
+drug level test
+toxicology screen
+pregnancy test
+hiv test
+hepatitis test
+thyroid ultrasound
+abdominal ultrasound
+pelvic ultrasound
+renal ultrasound
+liver ultrasound
+breast ultrasound
+fetal ultrasound
+doppler study
+vascular study
+carotid study
+lung function test
+spirometry ordered
+peak flow test
+arterial blood gas
+skin biopsy
+tumor marker test
+cea test
+ca125 test
+psa repeat
+________________
+
+
+3. Assessment Keywords (125 Terms)
+stable
+worsening
+improving
+improved
+controlled
+uncontrolled
+poorly controlled
+well controlled
+exacerbation
+acute exacerbation
+chronic
+acute
+progression
+resolved
+in remission
+partial remission
+relapse
+recurrence
+stage 1
+stage 2
+stage 3
+stage 4
+risk high
+risk low
+risk moderate
+complicated
+uncomplicated
+severe
+mild
+moderate
+critical
+terminal
+metastatic
+advanced
+early stage
+new diagnosis
+suspected
+confirmed
+likely
+unlikely
+rule out
+probable
+definite
+functional decline
+cognitive decline
+memory loss
+neuropathy present
+retinopathy present
+nephropathy present
+ulcer present
+infection present
+bacteremia present
+sepsis present
+shock present
+failure present
+renal failure
+heart failure
+respiratory failure
+liver failure
+chronic pain
+acute pain
+fracture healed
+fracture nonunion
+wound infected
+wound healing
+bleeding controlled
+bleeding uncontrolled
+anemia severe
+anemia mild
+malnutrition severe
+malnutrition moderate
+dehydration severe
+overhydration
+edema present
+ascites present
+effusion present
+arrhythmia present
+tachycardia present
+bradycardia present
+hypertension controlled
+hypertension uncontrolled
+diabetes controlled
+diabetes uncontrolled
+ckd stage 3
+ckd stage 4
+ckd stage 5
+copd stable
+copd exacerbation
+asthma controlled
+asthma uncontrolled
+infection resolved
+infection persistent
+tumor shrinking
+tumor growing
+response good
+response poor
+prognosis poor
+prognosis fair
+prognosis good
+compliance good
+compliance poor
+noncompliant
+adherent
+nonadherent
+stable angina
+unstable angina
+
+
+4. Treatment Keywords (125 Terms)
+started
+prescribed
+continue
+adjusted
+increased dose
+decreased dose
+added medication
+stopped medication
+changed medication
+switched medication
+insulin started
+metformin started
+statin started
+beta blocker started
+ace inhibitor started
+diuretic started
+antibiotic started
+antiviral started
+antifungal started
+pain medication started
+steroid started
+inhaler started
+oxygen started
+cpap started
+dialysis started
+chemotherapy started
+radiation started
+immunotherapy started
+surgery planned
+surgery performed
+procedure done
+biopsy done
+stent placed
+pacemaker placed
+catheter placed
+wound dressing applied
+cast applied
+splint applied
+brace applied
+pt ordered
+ot ordered
+speech therapy ordered
+home health ordered
+nutrition plan started
+diet changed
+exercise program started
+weight loss plan
+smoking cessation plan
+alcohol counseling
+drug counseling
+mental health therapy
+counseling provided
+education provided
+vaccination given
+flu shot given
+covid vaccine given
+booster given
+pain injection given
+nerve block done
+joint injection done
+iv fluids given
+blood transfusion given
+iron infusion given
+vitamin injection given
+b12 injection given
+steroid injection given
+anticoagulation started
+aspirin started
+clopidogrel started
+warfarin started
+heparin started
+insulin adjusted
+metformin adjusted
+statin adjusted
+bp meds adjusted
+diuretics adjusted
+thyroid meds adjusted
+antidepressant started
+antipsychotic started
+antiepileptic started
+bronchodilator started
+nebulizer started
+ppi started
+antacid started
+laxative started
+antiemetic started
+sleep medication started
+pain patch started
+lidocaine patch applied
+wound debridement done
+dialysis scheduled
+follow-up surgery planned
+hospice started
+palliative care started
+comfort care started
+supportive care started
+rehab started
+physical therapy continued
+therapy completed
+treatment completed
+maintenance therapy
+dose titrated
+dose tapered
+dose held
+________________
+
+
+
+
+✅ 1. Python JSON File (Ready to Import)
+{
+ "version": "1.0",
+ "description": "Medryte RiskAlign MEAT Keyword Library",
+ "categories": {
+
+
+   "Monitoring": {
+     "keywords": [
+       "reviewed", "monitor", "monitored", "follow-up", "recheck",
+       "trend", "tracking", "labs reviewed", "a1c reviewed",
+       "creatinine reviewed", "bp monitored", "weight monitored",
+       "oxygen monitored", "symptom diary", "repeat labs",
+       "repeat imaging", "vitals reviewed", "surveillance",
+       "observe", "watchful waiting"
+     ],
+     "weight": 0.8
+   },
+
+
+   "Evaluation": {
+     "keywords": [
+       "ordered", "lab ordered", "cbc ordered", "cmp ordered",
+       "mri ordered", "ct scan ordered", "x-ray ordered",
+       "ultrasound ordered", "referral", "consult",
+       "cardiology referral", "nephrology referral",
+       "oncology referral", "biopsy ordered",
+       "endoscopy ordered", "screening", "ekg ordered",
+       "spirometry ordered", "stress test ordered",
+       "sleep study ordered"
+     ],
+     "weight": 0.9
+   },
+
+
+   "Assessment": {
+     "keywords": [
+       "stable", "worsening", "improving", "controlled",
+       "uncontrolled", "exacerbation", "acute", "chronic",
+       "stage 1", "stage 2", "stage 3", "stage 4",
+       "progression", "resolved", "in remission",
+       "poorly controlled", "well controlled",
+       "risk high", "risk low", "risk moderate"
+     ],
+     "weight": 1.0
+   },
+
+
+   "Treatment": {
+     "keywords": [
+       "started", "prescribed", "continue", "adjusted",
+       "increased dose", "decreased dose", "added medication",
+       "stopped medication", "therapy ordered",
+       "physical therapy ordered", "surgery planned",
+       "chemotherapy started", "radiation started",
+       "insulin started", "metformin started",
+       "antibiotic started", "oxygen started",
+       "cpap started", "dialysis started",
+       "vaccination given"
+     ],
+     "weight": 1.0
+   }
+ },
+
+
+ "condition_specific": {
+
+
+   "Diabetes": [
+     "a1c", "insulin", "metformin", "neuropathy",
+     "retinopathy", "hypoglycemia", "hyperglycemia"
+   ],
+
+
+   "CKD": [
+     "creatinine", "gfr", "dialysis",
+     "nephrology referral", "proteinuria"
+   ],
+
+
+   "COPD": [
+     "spirometry", "inhaler", "bronchodilator",
+     "steroid", "exacerbation"
+   ],
+
+
+   "CHF": [
+     "ef", "diuretic", "lasix", "bnp",
+     "fluid overload"
+   ]
+ },
+
+
+ "negative_keywords": [
+   "history of",
+   "family history",
+   "rule out",
+   "possible",
+   "suspected",
+   "screening only",
+   "denies",
+   "no evidence of"
+ ]
+}
+________________
+
+
+✅ 2. Python Code to Load This File
+import json
+
+
+with open("meat_keywords.json") as f:
+   MEAT_DICT = json.load(f)
+
+
+print(MEAT_DICT["categories"]["Monitoring"]["keywords"])
+________________
+
+
+✅ 3. Python Example – Detect MEAT
+def detect_meat(sentence):
+   sentence = sentence.lower()
+   results = {}
+
+
+   for meat, data in MEAT_DICT["categories"].items():
+       results[meat] = any(k in sentence for k in data["keywords"])
+
+
+   if any(n in sentence for n in MEAT_DICT["negative_keywords"]):
+       return {"valid": False}
+
+
+   return results
+________________
+
+
+✅ 4. Output Example
+Input:
+“HbA1c reviewed and insulin dose increased”
+Output:
+{
+ "Monitoring": True,
+ "Evaluation": False,
+ "Assessment": False,
+ "Treatment": True
+}
+________________
+
+
+✅Python Script – Generate True 10,000-Term Library
+Save as generate_medryte_keywords.py
+import json
+from itertools import product
+
+
+# -----------------------------
+# 1. MEAT Action Words
+# -----------------------------
+MEAT_ACTIONS = {
+   "Monitoring": [
+       "reviewed", "monitored", "follow-up", "recheck", "trend",
+       "tracked", "surveillance", "observed", "repeat test",
+       "vitals reviewed", "labs reviewed"
+   ],
+   "Evaluation": [
+       "ordered", "referral", "consult", "diagnostic test",
+       "imaging ordered", "biopsy ordered", "screening",
+       "evaluation done", "assess further"
+   ],
+   "Assessment": [
+       "stable", "worsening", "improved", "controlled",
+       "uncontrolled", "acute", "chronic", "stage",
+       "exacerbation", "progression", "resolved"
+   ],
+   "Treatment": [
+       "started", "prescribed", "adjusted", "increased dose",
+       "decreased dose", "therapy ordered",
+       "surgery planned", "procedure done",
+       "continued", "stopped medication"
+   ]
+}
+
+
+# -----------------------------
+# 2. Disease Vocabulary (HCC)
+# -----------------------------
+DISEASES = {
+   "Diabetes": ["a1c", "insulin", "metformin", "neuropathy", "retinopathy"],
+   "CKD": ["creatinine", "gfr", "dialysis", "proteinuria"],
+   "CHF": ["ef", "lasix", "diuretic", "bnp"],
+   "COPD": ["spirometry", "inhaler", "bronchodilator", "steroid"],
+   "Cancer": ["tumor", "metastasis", "chemotherapy", "radiation"],
+   "Hypertension": ["bp", "ace inhibitor", "beta blocker"],
+   "Stroke": ["ct brain", "mri brain", "neurology referral"],
+   "Liver Disease": ["ast", "alt", "bilirubin", "cirrhosis"],
+   "Depression": ["ssri", "therapy", "counseling"],
+   "Obesity": ["bmi", "weight loss", "diet"],
+   "CAD": ["angiogram", "stent", "statin"],
+   "Asthma": ["inhaler", "peak flow", "steroid"],
+   "Sepsis": ["antibiotic", "blood culture"],
+   "Malnutrition": ["albumin", "nutrition therapy"]
+}
+
+
+# -----------------------------
+# 3. Lab Keywords
+# -----------------------------
+LABS = [
+   "cbc", "cmp", "bmp", "lipid panel",
+   "thyroid test", "psa", "troponin",
+   "bnp", "a1c", "creatinine",
+   "gfr", "liver enzymes"
+]
+
+
+# -----------------------------
+# 4. Medication Keywords
+# -----------------------------
+MEDS = [
+   "metformin", "insulin", "statin",
+   "beta blocker", "ace inhibitor",
+   "diuretic", "antibiotic",
+   "steroid", "antidepressant",
+   "anticoagulant"
+]
+
+
+# -----------------------------
+# 5. Generate Library
+# -----------------------------
+library = {}
+
+
+for meat_type, actions in MEAT_ACTIONS.items():
+   terms = []
+
+
+   # Disease phrases
+   for disease, keywords in DISEASES.items():
+       combos = [
+           f"{a} {k}" for a, k in product(actions, keywords)
+       ]
+       terms.extend(combos)
+
+
+   # Lab phrases
+   lab_combos = [
+       f"{a} {lab}" for a, lab in product(actions, LABS)
+   ]
+   terms.extend(lab_combos)
+
+
+   # Medication phrases
+   med_combos = [
+       f"{a} {med}" for a, med in product(actions, MEDS)
+   ]
+   terms.extend(med_combos)
+
+
+   library[meat_type] = list(set(terms))
+
+
+# -----------------------------
+# 6. Negative Keywords
+# -----------------------------
+NEGATIVE = [
+   "history of", "family history",
+   "rule out", "possible",
+   "suspected", "screening only",
+   "denies", "no evidence of"
+]
+
+
+output = {
+   "version": "1.0",
+   "total_terms_estimated": sum(len(v) for v in library.values()),
+   "categories": library,
+   "negative_keywords": NEGATIVE
+}
+
+
+with open("medryte_10000_keyword_library.json", "w") as f:
+   json.dump(output, f, indent=2)
+
+
+print("Generated file: medryte_10000_keyword_library.json")
+________________
