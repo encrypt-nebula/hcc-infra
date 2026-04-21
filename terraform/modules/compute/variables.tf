@@ -81,3 +81,13 @@ variable "internal_api_key_arn" {
 variable "alert_email" {
   type = string
 }
+
+variable "instance_type" {
+  type    = string
+  default = "t3.medium"
+}
+
+variable "key_name" {
+  type    = string
+  default = "hcc-key-pair"
+}

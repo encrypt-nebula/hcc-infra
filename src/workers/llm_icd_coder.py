@@ -11,10 +11,16 @@ import urllib.request
 s3 = boto3.client('s3')
 bedrock_runtime = boto3.client('bedrock-runtime', region_name='us-east-1')
 sqs = boto3.client('sqs')
+secretsmanager = boto3.client('secretsmanager')
 
 # Env
 RESULTS_QUEUE_URL = os.environ.get('RESULTS_QUEUE_URL')
 RAW_DOCS_BUCKET = os.environ.get('RAW_DOCS_BUCKET', 'hcc-platform-dev-raw-docs')
+INTERNAL_API_KEY_ARN = os.environ.get('INTERNAL_API_KEY_ARN') or os.environ.get('INTERNAL_API_KEY_SECRET_ARN')
+INTERNAL_API_KEY = os.environ.get('INTERNAL_API_KEY') or os.environ.get('API_KEY')
+CLAUDE_SECRET_ID = os.environ.get('CLAUDE_SECRET_ID') or os.environ.get('CLAUDE_API_KEY_ARN')
+MODEL_NAME = (os.environ.get('ACTIVE_MODEL') or os.environ.get('LLM_MODEL') or 'NOVA_PRO').upper()
+API_BASE_URL = os.environ.get('API_BASE_URL', 'http://13.235.138.74:8080').rstrip('/')
 
 
 
@@ -28,6 +34,39 @@ except ImportError as e:
     pypdf = None
     PDF_TOOLS_AVAILABLE = False
     print(f"[WARNING] PDF extraction tools missing: {e}.")
+
+_cached_internal_api_key = None
+
+def get_internal_api_key():
+    global _cached_internal_api_key
+    if _cached_internal_api_key:
+        return _cached_internal_api_key
+
+    if INTERNAL_API_KEY:
+        _cached_internal_api_key = INTERNAL_API_KEY.strip()
+        return _cached_internal_api_key
+
+    if INTERNAL_API_KEY_ARN:
+        try:
+            secret_value = secretsmanager.get_secret_value(SecretId=INTERNAL_API_KEY_ARN)
+            secret_string = secret_value.get('SecretString', '') or ''
+            try:
+                parsed = json.loads(secret_string)
+                for candidate_key in ('api_key', 'API_KEY', 'internal_api_key', 'password', 'secret'):
+                    candidate = parsed.get(candidate_key)
+                    if candidate:
+                        _cached_internal_api_key = str(candidate).strip()
+                        return _cached_internal_api_key
+            except json.JSONDecodeError:
+                pass
+
+            _cached_internal_api_key = secret_string.strip()
+            return _cached_internal_api_key
+        except Exception as e:
+            print(f"[AUTH] Failed to load internal API key from Secrets Manager: {e}")
+
+    _cached_internal_api_key = "hcc-internal-secure-key-2026"
+    return _cached_internal_api_key
 
 class DeterministicPipeline:
     def __init__(self, signature_conf=0.5):
@@ -204,11 +243,10 @@ def validate_icd_codes(queries):
     if not queries:
         return []
         
-    url = "http://54.84.217.140:8080/icd-codes/validate"
+    url = f"{API_BASE_URL}/icd-codes/validate"
     payload = {"queries": queries}
     
-    env_key = os.environ.get('INTERNAL_API_KEY') or os.environ.get('API_KEY')
-    api_key = env_key.strip() if env_key else "hcc-internal-secure-key-2026"
+    api_key = get_internal_api_key()
     
     req = urllib.request.Request(
         url,
@@ -226,9 +264,37 @@ def validate_icd_codes(queries):
         # If the API fails, return the original queries to prevent data loss or blocking
         return queries
 
+def _build_converse_content(model_id, file_content, file_ext, prompt, raw_text):
+    content_blocks = []
+    content_blocks.append({'text': f"RAW DOCUMENT TEXT:\n{raw_text[:30000]}\n\nPROMPT:\n{prompt}"})
+
+    if file_ext in ['pdf', 'csv', 'txt']:
+        if "nova" in model_id.lower():
+            content_blocks.append({'document': {'name': 'Doc', 'format': file_ext, 'source': {'bytes': file_content}}})
+    else:
+        content_blocks.append({'image': {'format': 'jpeg' if file_ext in ['jpg', 'jpeg'] else file_ext, 'source': {'bytes': file_content}}})
+
+    return content_blocks
+
+def _invoke_bedrock(model_id, content_blocks):
+    return bedrock_runtime.converse(
+        modelId=model_id,
+        messages=[{'role': 'user', 'content': content_blocks}],
+        inferenceConfig={
+            'temperature': 0,
+            'maxTokens': 5120
+        }
+    )
+
 def call_bedrock_llm(file_content, file_ext, page_range, file_key, raw_text):
-    model_id = MODELS.get(ACTIVE_MODEL, MODELS["NOVA"])
-    print(f"[LLM_CHUNKER] Calling Bedrock ({ACTIVE_MODEL}) for {file_key}, Range: {page_range}")
+    preferred_model = MODELS.get(MODEL_NAME, MODELS["NOVA_PRO"])
+    fallback_models = [preferred_model]
+    for name in ("NOVA_PRO", "NOVA", "CLAUDE"):
+        candidate = MODELS.get(name)
+        if candidate and candidate not in fallback_models:
+            fallback_models.append(candidate)
+
+    print(f"[LLM_CHUNKER] Calling Bedrock ({MODEL_NAME}) for {file_key}, Range: {page_range}")
     
     prompt = f"""Analyze the provided text and document. Extract Patient and Provider info.
 Specifically, look for and extract:
@@ -258,44 +324,30 @@ OUTPUT FORMAT:
   }}]
 }}"""
 
-    content_blocks = []
-    # Pass the raw text directly as a block
-    # Note: We truncate to 20k to stay safe on context vs cost, but can be increased
-    content_blocks.append({'text': f"RAW DOCUMENT TEXT:\n{raw_text[:30000]}\n\nPROMPT:\n{prompt}"})
-    
-    # Also pass the actual document/image for vision-side reasoning if supported
-    if file_ext in ['pdf', 'csv', 'txt']:
-        # IMPORTANT: Bedrock 'document' block is currently only supported for certain models (like Nova)
-        if "nova" in model_id.lower():
-            content_blocks.append({'document': {'name': 'Doc', 'format': file_ext, 'source': {'bytes': file_content}}})
-        else:
-            # For Claude, we rely on the raw_text already provided above
-            pass
-    else:
-        # Images (png, jpg) are supported by both Nova and Claude in the converse API
-        content_blocks.append({'image': {'format': 'jpeg' if file_ext in ['jpg', 'jpeg'] else file_ext, 'source': {'bytes': file_content}}})
+    last_error = None
+    for model_id in fallback_models:
+        content_blocks = _build_converse_content(model_id, file_content, file_ext, prompt, raw_text)
+        try:
+            response = _invoke_bedrock(model_id, content_blocks)
+            text = response['output']['message']['content'][0]['text']
+            print(f"[LLM_CHUNKER] Bedrock response length: {len(text)} chars from {model_id}")
 
-    try:
-        response = bedrock_runtime.converse(
-            modelId=model_id,
-            messages=[{'role': 'user', 'content': content_blocks}],
-            inferenceConfig={
-                'temperature': 0,
-                'maxTokens': 5120
-            }
-        )
-        text = response['output']['message']['content'][0]['text']
-        print(f"[LLM_CHUNKER] Bedrock response length: {len(text)} chars")
-        
-        # Clean JSON
-        json_match = re.search(r'(\{.*\}|\[.*\])', text, re.DOTALL)
-        json_str = json_match.group(1).strip() if json_match else text.strip()
-        json_str = re.sub(r'```json\s*|\s*```', '', json_str).strip()
-        
-        return json.loads(json_str)
-    except Exception as e:
-        print(f"[LLM_CHUNKER] Bedrock ERROR: {str(e)}")
-        raise e
+            json_match = re.search(r'(\{.*\}|\[.*\])', text, re.DOTALL)
+            json_str = json_match.group(1).strip() if json_match else text.strip()
+            json_str = re.sub(r'```json\s*|\s*```', '', json_str).strip()
+
+            return json.loads(json_str)
+        except Exception as e:
+            last_error = e
+            error_text = str(e)
+            print(f"[LLM_CHUNKER] Bedrock ERROR from {model_id}: {error_text}")
+            if "access" in error_text.lower() or "not authorized" in error_text.lower() or "unrecognized model" in error_text.lower():
+                continue
+            raise e
+
+    if last_error:
+        raise last_error
+    raise RuntimeError("Bedrock invocation failed without a captured error.")
 
 def lambda_handler(event, context):
     print(f"[LLM_CHUNKER] STARTING Batch.")

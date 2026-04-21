@@ -11,14 +11,45 @@ s3 = boto3.client('s3')
 
 # Config
 RAW_DOCS_BUCKET = os.environ.get('RAW_DOCS_BUCKET', 'hcc-platform-dev-raw-docs')
-STATUS_API_URL = "http://54.84.217.140:8080/api/files/status"
-EXTRACT_DATA_API_URL = "http://54.84.217.140:8080/extract-data"
+API_BASE_URL = os.environ.get('API_BASE_URL', 'http://13.235.138.74:8080').rstrip('/')
+STATUS_API_URL = f"{API_BASE_URL}/api/files/status"
+EXTRACT_DATA_API_URL = f"{API_BASE_URL}/extract-data"
 PROJECT_NAME_ENV = os.environ.get('PROJECT_NAME', 'hcc-platform')
+INTERNAL_API_KEY_ARN = os.environ.get('INTERNAL_API_KEY_ARN') or os.environ.get('INTERNAL_API_KEY_SECRET_ARN')
+INTERNAL_API_KEY = os.environ.get('INTERNAL_API_KEY') or os.environ.get('API_KEY')
+
+secretsmanager = boto3.client('secretsmanager')
+_cached_internal_api_key = None
 
 def get_internal_api_key():
-    env_key = os.environ.get('INTERNAL_API_KEY') or os.environ.get('API_KEY')
-    if env_key: return env_key.strip()
-    return "hcc-internal-secure-key-2026"
+    global _cached_internal_api_key
+    if _cached_internal_api_key:
+        return _cached_internal_api_key
+
+    if INTERNAL_API_KEY:
+        _cached_internal_api_key = INTERNAL_API_KEY.strip()
+        return _cached_internal_api_key
+
+    if INTERNAL_API_KEY_ARN:
+        try:
+            secret_value = secretsmanager.get_secret_value(SecretId=INTERNAL_API_KEY_ARN)
+            secret_string = secret_value.get('SecretString', '') or ''
+            try:
+                parsed = json.loads(secret_string)
+                for candidate_key in ('api_key', 'API_KEY', 'internal_api_key', 'password', 'secret'):
+                    candidate = parsed.get(candidate_key)
+                    if candidate:
+                        _cached_internal_api_key = str(candidate).strip()
+                        return _cached_internal_api_key
+            except json.JSONDecodeError:
+                pass
+            _cached_internal_api_key = secret_string.strip()
+            return _cached_internal_api_key
+        except Exception as e:
+            print(f"[AUTH] Failed to load internal API key from Secrets Manager: {e}")
+
+    _cached_internal_api_key = "hcc-internal-secure-key-2026"
+    return _cached_internal_api_key
 
 def update_file_status(s3_path, status, error=None):
     print(f"[STATUS_FINAL] Finalizing Status: {s3_path} -> {status}")

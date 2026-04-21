@@ -66,12 +66,10 @@ resource "aws_iam_role_policy" "lambda_policy" {
       {
         Effect = "Allow"
         Action = [
-          "bedrock:InvokeModel"
+          "bedrock:InvokeModel",
+          "bedrock:InvokeModelWithResponseStream"
         ]
-        Resource = [
-          "arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-lite-v1:0",
-          "arn:aws:bedrock:us-east-1::foundation-model/us.amazon.nova-lite-v1:0"
-        ]
+        Resource = "*"
       },
       {
         Effect = "Allow"
@@ -301,6 +299,8 @@ resource "aws_lambda_function" "llm_icd_coder" {
 
   environment {
     variables = {
+      INTERNAL_API_KEY_ARN = var.internal_api_key_arn
+      INTERNAL_API_KEY     = "hcc-internal-secure-key-2026"
       CLAUDE_SECRET_ID  = var.claude_api_key_arn
       RESULTS_QUEUE_URL = var.results_queue_url
       RAW_DOCS_BUCKET   = var.raw_docs_bucket_name
