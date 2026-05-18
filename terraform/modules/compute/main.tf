@@ -81,6 +81,17 @@ resource "aws_iam_role_policy" "lambda_policy" {
           var.db_password_arn,
           var.internal_api_key_arn
         ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "aws-marketplace:Subscribe",
+          "aws-marketplace:Unsubscribe",
+          "aws-marketplace:ViewSubscriptions",
+          "sagemaker:ListHubContents",
+          "sagemaker:Search"
+        ]
+        Resource = "*"
       }
     ]
   })
@@ -139,8 +150,8 @@ resource "aws_lambda_function" "file_processor" {
       RAW_DOCS_BUCKET      = var.raw_docs_bucket_name
       ENVIRONMENT          = var.environment
       PROJECT_NAME         = var.project_name
+      API_BASE_URL         = var.api_base_url
       INTERNAL_API_KEY_ARN = var.internal_api_key_arn
-      INTERNAL_API_KEY     = "hcc-internal-secure-key-2026"
       LLM_QUEUE_URL        = var.llm_processing_queue_url
       RESULTS_QUEUE_URL    = var.results_queue_url
     }
@@ -190,6 +201,7 @@ resource "aws_lambda_function" "upload_url_generator" {
 
   environment {
     variables = {
+      API_BASE_URL = var.api_base_url
       RAW_DOCS_BUCKET = var.raw_docs_bucket_name
     }
   }
@@ -299,8 +311,8 @@ resource "aws_lambda_function" "llm_icd_coder" {
 
   environment {
     variables = {
+      API_BASE_URL      = var.api_base_url
       INTERNAL_API_KEY_ARN = var.internal_api_key_arn
-      INTERNAL_API_KEY     = "hcc-internal-secure-key-2026"
       CLAUDE_SECRET_ID  = var.claude_api_key_arn
       RESULTS_QUEUE_URL = var.results_queue_url
       RAW_DOCS_BUCKET   = var.raw_docs_bucket_name
@@ -322,12 +334,12 @@ resource "aws_lambda_function" "raw_text_extractor" {
 
   environment {
     variables = {
+      API_BASE_URL         = var.api_base_url
       DB_HOST             = var.db_host
       DB_NAME             = var.db_name
       DB_USER             = var.db_username
       DB_PASSWORD_ARN     = var.db_password_arn
       INTERNAL_API_KEY_ARN = var.internal_api_key_arn
-      INTERNAL_API_KEY     = "hcc-internal-secure-key-2026"
       RAW_DOCS_BUCKET     = var.raw_docs_bucket_name
       PROJECT_NAME        = var.project_name
     }

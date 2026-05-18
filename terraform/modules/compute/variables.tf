@@ -82,6 +82,10 @@ variable "alert_email" {
   type = string
 }
 
+variable "api_base_url" {
+  type = string
+}
+
 variable "instance_type" {
   type    = string
   default = "t3.medium"

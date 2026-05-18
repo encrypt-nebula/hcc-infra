@@ -92,6 +92,7 @@ module "compute" {
   db_password_arn = module.secrets.db_password_arn
   internal_api_key_arn = "arn:aws:secretsmanager:us-east-1:890742591306:secret:hcc-platform-dev-internal-api-key-CmiECu"
   alert_email     = var.alert_email
+  api_base_url    = "http://54.84.217.140:8080"
 }
 
 # Outputs
