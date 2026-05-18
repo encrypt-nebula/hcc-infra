@@ -22,7 +22,7 @@ sqs = boto3.client('sqs')
 
 # Config
 RAW_DOCS_BUCKET = os.environ.get('RAW_DOCS_BUCKET')
-API_BASE_URL = os.environ.get('API_BASE_URL', 'http://13.235.138.74:8080').rstrip('/')
+API_BASE_URL = os.environ.get('API_BASE_URL', 'http://54.84.217.140:8080').rstrip('/')
 PROJECT_NAME_ENV = os.environ.get('PROJECT_NAME', 'hcc-platform')
 LLM_QUEUE_URL = os.environ.get('LLM_QUEUE_URL')
 RESULTS_QUEUE_URL = os.environ.get('RESULTS_QUEUE_URL')
@@ -33,8 +33,8 @@ INTERNAL_API_KEY = os.environ.get('INTERNAL_API_KEY') or os.environ.get('API_KEY
 secretsmanager = boto3.client('secretsmanager')
 _cached_internal_api_key = None
 
-CHUNK_THRESHOLD = 25
-LARGE_FILE_CHUNK_SIZE = 15
+CHUNK_THRESHOLD = 10
+LARGE_FILE_CHUNK_SIZE = 5
 
 def get_internal_api_key():
     global _cached_internal_api_key
@@ -75,7 +75,8 @@ def update_file_status(file_key, project_id, project_type, status, error=None, t
         "projectType": project_type,
         "status": status,
         "errorMessage": error,
-        "total_pages": total_pages
+        "total_pages": total_pages,
+        "isValid": True
     }
     api_key = get_internal_api_key()
     req = urllib.request.Request(
@@ -101,6 +102,7 @@ def call_bedrock_nova_direct(file_content, file_ext, file_key):
     2. **IDENTIFICATION**:
        - PATIENT: Identify from fields like 'Name:', 'Patient:', 'DOB'.
        - PROVIDER: Identify the clinician/attending from signatures or 'Provider' headings.
+       - INSURANCE: Identify the insurance carrier or payer name.
     3. **ICD-10 CATEGORIES**:
        - `extracted_icd_codes`: ONLY codes physically typed in the document (e.g. "I10", "E11.9").
        - `ai_suggested_icd_code`: Codes YOU determine from condition names (e.g. "Diabetes") that do NOT have a code written next to them.
@@ -108,6 +110,7 @@ def call_bedrock_nova_direct(file_content, file_ext, file_key):
     Return ONLY JSON in this structure:
     {
       "signature_found": boolean,
+      "insurance": string,
       "patient_info": {
         "first_name": string,
         "last_name": string,
@@ -136,11 +139,11 @@ def call_bedrock_nova_direct(file_content, file_ext, file_key):
 
     try:
         response = bedrock_runtime.converse(
-            modelId="amazon.nova-lite-v1:0",
+            modelId="us.amazon.nova-lite-v1:0",
             messages=[{'role': 'user', 'content': content_blocks}],
             inferenceConfig={
                 'temperature': 0,
-                'maxTokens': 5120
+                'maxTokens': 4096
             }
         )
         text = response['output']['message']['content'][0]['text']
@@ -211,23 +214,49 @@ def lambda_handler(event, context):
             s3_obj = s3.head_object(Bucket=RAW_DOCS_BUCKET, Key=file_key)
             file_size = s3_obj['ContentLength']
             
-            # Default to a safe estimate
-            total_pages = max(1, math.ceil(file_size / 30000))
+            # Identify file type and determine page count
+            is_image = file_ext in ['png', 'jpg', 'jpeg', 'webp', 'tiff', 'tif']
             
-            if file_ext == 'pdf' and HAS_PYPDF:
+            if is_image:
+                total_pages = 1
+                print(f"[FILE_PROCESS] Image detected ({file_ext}), setting total_pages to 1")
+            elif file_ext == 'pdf':
                 try:
                     print(f"[FILE_PROCESS] Safely extracting PDF metadata for: {file_name}")
-                    # Only download the first 32KB and last 32KB if possible, but for simplicity
-                    # and since we are in Lambda, we'll download just enough for metadata.
-                    # PdfReader can take a stream.
                     s3_body = s3.get_object(Bucket=RAW_DOCS_BUCKET, Key=file_key)['Body'].read()
-                    pdf = PdfReader(io.BytesIO(s3_body))
-                    total_pages = len(pdf.pages)
-                    print(f"[FILE_PROCESS] SUCCESS: Extracted exact page count: {total_pages}")
+                    
+                    extracted = False
+                    if HAS_PYPDF:
+                        try:
+                            pdf = PdfReader(io.BytesIO(s3_body))
+                            total_pages = len(pdf.pages)
+                            extracted = True
+                            print(f"[FILE_PROCESS] SUCCESS: Extracted exact page count via pypdf: {total_pages}")
+                        except Exception as pypdf_err:
+                            print(f"[FILE_PROCESS] pypdf failed: {pypdf_err}. Trying regex fallback.")
+                    
+                    if not extracted:
+                        # Regex fallback: Look for /Count followed by whitespace and a number
+                        # We look for the last occurrence as it's usually the Catalog's count
+                        matches = re.findall(rb'/Count\s+(\d+)', s3_body)
+                        if matches:
+                            total_pages = int(matches[-1])
+                            extracted = True
+                            print(f"[FILE_PROCESS] SUCCESS: Extracted page count via regex: {total_pages}")
+                        else:
+                            # Fallback if both fail
+                            total_pages = max(1, math.ceil(file_size / 25000))
+                            print(f"[FILE_PROCESS] WARNING: All metadata extractions failed for PDF. Using estimate: {total_pages}")
                 except Exception as meta_err:
-                    print(f"[FILE_PROCESS] WARNING: Precise extraction failed ({str(meta_err)}). Falling back to safe estimate.")
+                    total_pages = max(1, math.ceil(file_size / 30000))
+                    print(f"[FILE_PROCESS] WARNING: Precise extraction failed ({str(meta_err)}). Falling back to safe estimate: {total_pages}")
             else:
-                print(f"[FILE_PROCESS] Using estimate for non-pdf or if library missing: {total_pages}")
+                # Default to 1 for small files, otherwise estimate for other documents (txt, csv, etc.)
+                if file_size < 10000:
+                    total_pages = 1
+                else:
+                    total_pages = max(1, math.ceil(file_size / 30000))
+                print(f"[FILE_PROCESS] Using estimate for {file_ext}: {total_pages}")
             
             print(f"[FILE_PROCESS] Final Decision: {file_name}, Size: {file_size} bytes, Pages: {total_pages}")
 
@@ -273,7 +302,6 @@ def lambda_handler(event, context):
                 if not LLM_QUEUE_URL:
                     raise Exception("LLM_QUEUE_URL environment variable is missing!")
 
-                # For PDF splitting, we need the full content
                 s3_full_content = s3.get_object(Bucket=RAW_DOCS_BUCKET, Key=file_key)['Body'].read()
 
                 for i in range(num_chunks):
@@ -282,32 +310,26 @@ def lambda_handler(event, context):
                     
                     chunk_s3_key = f"_chunks/{file_key}/chunk_{i}.{file_ext}"
                     
-                    # Physically split if it's a PDF
                     if file_ext == 'pdf' and HAS_PYPDF:
                         try:
-                            print(f"[FILE_PROCESS] Physically splitting PDF pages {start_page}-{end_page} for chunk {i}")
                             reader = PdfReader(io.BytesIO(s3_full_content))
                             writer = PdfWriter()
-                            # PdfReader pages are 0-indexed
                             for p_num in range(start_page - 1, end_page):
                                 writer.add_page(reader.pages[p_num])
                             
                             chunk_buffer = io.BytesIO()
                             writer.write(chunk_buffer)
-                            chunk_buffer.seek(0)
-                            
-                            s3.put_object(Bucket=RAW_DOCS_BUCKET, Key=chunk_s3_key, Body=chunk_buffer.read())
-                            print(f"[FILE_PROCESS] Uploaded chunk PDF to: {chunk_s3_key}")
+                            s3.put_object(Bucket=RAW_DOCS_BUCKET, Key=chunk_s3_key, Body=chunk_buffer.getvalue())
+                            print(f"[FILE_PROCESS] Uploaded chunk PDF to: {chunk_s3_key} (Pages {start_page}-{end_page})")
                         except Exception as split_err:
                             print(f"[FILE_PROCESS] WARNING: Physical split failed for chunk {i}: {str(split_err)}. Falling back to full file.")
-                            chunk_s3_key = file_key # Fallback
+                            chunk_s3_key = file_key
                     else:
-                        # For non-PDF or if splitting fails, just use the original file key (current behavior)
                         chunk_s3_key = file_key
 
                     chunk_msg = {
                         "file_key": file_key,
-                        "chunk_s3_key": chunk_s3_key, # Added for LLM worker
+                        "chunk_s3_key": chunk_s3_key,
                         "project_id": project_id,
                         "project_type": project_type,
                         "chunk_index": i,
