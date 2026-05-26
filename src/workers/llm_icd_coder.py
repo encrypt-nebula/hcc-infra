@@ -76,7 +76,7 @@ class DeterministicPipeline:
         self.signature_conf = signature_conf
         self.sig_patterns = [
             re.compile(r'\b' + kw + r'\b', re.IGNORECASE) 
-            for kw in ["electronically signed", "digitally signed", "signed by"]
+            for kw in ["electronically signed", "digitally signed", "signed by", "signed electronically", "electronic signature", "signed at"]
         ]
 
     def _extract_structured_data(self, text, output):
@@ -475,12 +475,11 @@ Specifically, look for and extract:
 - hcin_number (HCIN NUMBER)
 - member_id (MEMBER ID)
 - physician_name (PHYSICIAN or PROVIDER NAME)
-- insurance (INSURANCE COMPANY or PAYER NAME)
+- insurance (INSURANCE COMPANY or PAYER NAME). If the insurance payer is not explicitly stated on the document, you MUST return null. Do not infer or guess.
 
 For each visit/encounter found in the document:
 1. Identify the Date of Service (DOS). **CRITICAL: The DOS MUST NOT be empty. If you cannot find a clear DOS for a section, associate it with the closest preceding date.**
-2. Map **EVERY** found ICD-10 code (or clinical condition) to its specific DOS. DO NOT return codes without a DOS.
-3. List both the Alphanumeric codes (e.g., I10, E11.9) AND clear descriptions of any clinical conditions mentioned that don't have a code written next to them (e.g. "Diabetes", "Hypertension").
+2. Do NOT extract alphanumeric ICD codes. Only extract clear textual descriptions of any clinical conditions, problems, or diagnoses mentioned (e.g. "Choledocholithiasis", "Hypertension"). Put these in clinical_conditions.
 
 Return strict JSON only. No text/markdown.
 
@@ -490,13 +489,12 @@ OUTPUT FORMAT:
   "hcin_number": "",
   "member_id": "",
   "physician_name": "",
-  "insurance": "",
+  "insurance": null,
   "patient_info": {{"first_name": "", "last_name": "", "dob": ""}},
   "provider_info": {{"first_name": "", "last_name": "", "credentials": ""}},
   "details": [{{
     "dos": "MM/DD/YYYY",
-    "extracted_icd_codes": ["I10", "E11.9"],
-    "ai_suggested_icd_code": ["Diabetes", "Hypertension"]
+    "clinical_conditions": ["Diabetes", "Hypertension"]
   }}]
 }}"""
 
@@ -613,42 +611,40 @@ def lambda_handler(event, context):
                                 continue
                                 
                             # --- ICD Validation via Spring Boot API ---
-                            raw_ext = entry.get('extracted_icd_codes', [])
-                            raw_ai = entry.get('ai_suggested_icd_code', [])
+                            raw_conditions = entry.get('clinical_conditions', [])
+                            explicit_icds = structured_data.get('extracted_icd_codes', [])
                             
-                            # Filter and validate codes
-                            # Alphanumeric vs Descriptive
-                            code_queries = []
-                            desc_queries = []
+                            icd_codes = []
+                            # Step 1: Add explicitly found ICD codes via Regex (highest confidence)
+                            for code in explicit_icds:
+                                icd_codes.append({
+                                    "code": code,
+                                    "description": "Extracted verbatim from document",
+                                    "confidence": 0.99,
+                                    "source": "explicit_icd"
+                                })
                             
-                            seen = set()
-                            for q in ((raw_ext if isinstance(raw_ext, list) else []) + (raw_ai if isinstance(raw_ai, list) else [])):
-                                q_str = str(q).strip()
-                                if not q_str or q_str.isdigit() or q_str in seen: continue
-                                seen.add(q_str)
-                                
-                                # Check if it contains digits (alphanumeric codes like I10) or is purely alpha (description like "Diabetes")
-                                if any(char.isdigit() for char in q_str):
-                                    code_queries.append(q_str)
-                                else:
-                                    desc_queries.append(q_str)
-                            
-                            # Validate Alphanumeric Codes
-                            if code_queries:
-                                print(f"[CHUNK_PROCESS] Validating {len(code_queries)} Alphanumeric codes for DOS {dos}")
-                                entry['extracted_icd_codes'] = validate_icd_codes(code_queries)
-                            else:
-                                entry['extracted_icd_codes'] = []
-                                
-                            # Validate Descriptive Strings -> map to AI Suggestions
+                            # Step 2: Validate LLM extracted clinical conditions via API and map to ICD codes
+                            desc_queries = [str(q).strip() for q in raw_conditions if str(q).strip()]
                             if desc_queries:
                                 print(f"[CHUNK_PROCESS] Validating {len(desc_queries)} Descriptions for DOS {dos}")
-                                entry['ai_suggested_icd_code'] = validate_icd_codes(desc_queries)
-                            else:
-                                entry['ai_suggested_icd_code'] = []
-                                
-                            # Only keep entry if it has at least one valid code or suggestion
-                            if entry['extracted_icd_codes'] or entry['ai_suggested_icd_code']:
+                                mapped_codes = validate_icd_codes(desc_queries)
+                                for code in mapped_codes:
+                                    if not any(c.get("code") == code for c in icd_codes):
+                                        icd_codes.append({
+                                            "code": code,
+                                            "description": "Mapped from clinical condition text",
+                                            "confidence": 0.75,
+                                            "source": "diagnosis_mapping"
+                                        })
+                            
+                            # Remove old schema fields
+                            if 'clinical_conditions' in entry:
+                                del entry['clinical_conditions']
+                            
+                            # Only keep entry if it has at least one valid code
+                            if icd_codes:
+                                entry['icdCodes'] = icd_codes
                                 validated_details.append(entry)
                             else:
                                 print(f"[CHUNK_PROCESS] Skipping DOS {dos} because no valid codes or suggestions found.")

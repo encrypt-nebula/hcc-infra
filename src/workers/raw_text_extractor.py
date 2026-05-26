@@ -296,7 +296,8 @@ def lambda_handler(event, context):
                     representative_dos = merged_details[0].get('dos', "Unknown")
 
                 # 2.5 Calculate Document Validity
-                is_doc_valid = (top_meta["signature"] == "yes" and top_meta["credentials"] != "None")
+                # Process all files normally, missing signatures/credentials will just be reflected in the extracted fields
+                is_doc_valid = True
                 
                 final_payload = {
                     "fileName": file_key.split('/')[-1], 
